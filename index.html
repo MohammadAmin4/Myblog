@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="fa">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>وبلاگ پیشرفته | نسخه پایدار</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Vazirmatn', system-ui, Tahoma, sans-serif; }
+        
+        body { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; padding: 20px; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        
+        .header { background: rgba(255,255,255,0.95); border-radius: 25px; padding: 20px 30px; margin-bottom: 30px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; }
+        .site-title h1 { color: #667eea; font-size: 1.8rem; }
+        .admin-btn { background: linear-gradient(135deg, #667eea, #764ba2); color: white; border: none; padding: 12px 25px; border-radius: 30px; cursor: pointer; font-weight: bold; }
+        
+        .categories { background: white; border-radius: 20px; padding: 15px; margin-bottom: 25px; display: flex; gap: 10px; flex-wrap: wrap; }
+        .cat-btn { background: #f0f0f0; border: none; padding: 8px 20px; border-radius: 20px; cursor: pointer; }
+        .cat-btn.active { background: #667eea; color: white; }
+        
+        .posts-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 25px; }
+        .post-card { background: white; border-radius: 20px; overflow: hidden; box-shadow: 0 5px 20px rgba(0,0,0,0.1); transition: transform 0.3s; }
+        .post-card:hover { transform: translateY(-5px); }
+        .post-image { width: 100%; height: 200px; background: linear-gradient(135deg, #667eea, #764ba2); display: flex; align-items: center; justify-content: center; color: white; font-size: 3rem; }
+        .post-content { padding: 20px; }
+        .post-category { display: inline-block; background: #667eea; color: white; padding: 4px 12px; border-radius: 15px; font-size: 0.75rem; margin-bottom: 10px; }
+        .post-title { font-size: 1.4rem; color: #333; margin-bottom: 10px; }
+        .post-meta { display: flex; justify-content: space-between; color: #888; font-size: 0.8rem; margin-bottom: 15px; }
+        .read-more { color: #667eea; text-decoration: none; font-weight: bold; cursor: pointer; display: inline-block; margin-top: 10px; }
+        
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); justify-content: center; align-items: center; z-index: 1000; }
+        .modal-content { background: white; width: 90%; max-width: 600px; border-radius: 25px; padding: 30px; max-height: 90vh; overflow-y: auto; }
+        .form-group { margin-bottom: 20px; }
+        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 12px; }
+        .form-group textarea { min-height: 150px; }
+        .btn-primary { background: linear-gradient(135deg, #667eea, #764ba2); color: white; border: none; padding: 12px 25px; border-radius: 25px; cursor: pointer; margin-left: 10px; }
+        .btn-danger { background: #e74c3c; color: white; border: none; padding: 8px 15px; border-radius: 20px; cursor: pointer; }
+        .btn-secondary { background: #95a5a6; color: white; border: none; padding: 8px 15px; border-radius: 20px; cursor: pointer; }
+        
+        .stats { background: white; border-radius: 20px; padding: 20px; margin-bottom: 25px; display: flex; justify-content: space-around; text-align: center; }
+        .stat-item h3 { font-size: 2rem; color: #667eea; }
+        
+        @media (max-width: 768px) {
+            .posts-grid { grid-template-columns: 1fr; }
+            .header { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <div class="site-title">
+            <h1>📝 وبلاگ من</h1>
+            <p>با مدیریت کامل و پایدار</p>
+        </div>
+        <button class="admin-btn" onclick="openAdminPanel()">👑 پنل مدیریت</button>
+    </div>
+    
+    <div class="stats" id="stats">
+        <div class="stat-item"><h3 id="totalPosts">0</h3><p>پست‌ها</p></div>
+        <div class="stat-item"><h3 id="totalComments">0</h3><p>کامنت‌ها</p></div>
+    </div>
+    
+    <div class="categories" id="categoriesFilter"></div>
+    <div id="postsContainer" class="posts-grid"></div>
+</div>
+
+<!-- مودال ادمین -->
+<div id="adminModal" class="modal">
+    <div class="modal-content">
+        <div id="loginSection">
+            <h2>🔐 ورود به پنل</h2>
+            <input type="password" id="adminPassword" placeholder="رمز مدیریت" style="width:100%; padding:12px; margin:15px 0; border-radius:12px; border:2px solid #ddd">
+            <button class="btn-primary" onclick="checkAdminLogin()">ورود</button>
+            <button class="btn-secondary" onclick="closeModal('adminModal')">بستن</button>
+            <p id="loginError" style="color:red; margin-top:10px"></p>
+        </div>
+        
+        <div id="adminSection" style="display:none">
+            <h2>📝 مدیریت وبلاگ</h2>
+            <div class="form-group">
+                <label>عنوان پست</label>
+                <input type="text" id="postTitle" placeholder="عنوان">
+            </div>
+            <div class="form-group">
+                <label>دسته‌بندی</label>
+                <select id="postCategory">
+                    <option>عمومی</option>
+                    <option>برنامه‌نویسی</option>
+                    <option>زندگی</option>
+                    <option>تکنولوژی</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>متن پست</label>
+                <textarea id="postBody" placeholder="متن پست..."></textarea>
+            </div>
+            <button class="btn-primary" onclick="addPost()">➕ انتشار پست</button>
+            <hr style="margin: 20px 0">
+            <h3>📋 لیست پست‌ها</h3>
+            <div id="adminPostsList"></div>
+            <button class="btn-secondary" onclick="logoutAdmin()" style="margin-top:20px">🚪 خروج</button>
+        </div>
+    </div>
+</div>
+
+<!-- مودال نمایش پست -->
+<div id="postModal" class="modal">
+    <div class="modal-content" id="postModalContent"></div>
+</div>
+
+<script>
+    // ==================== دیتابیس ====================
+    let posts = [];
+    let comments = [];
+    
+    // بارگذاری داده از localStorage
+    function loadData() {
+        const savedPosts = localStorage.getItem('blog_posts_fixed');
+        const savedComments = localStorage.getItem('blog_comments_fixed');
+        
+        if(savedPosts) {
+            posts = JSON.parse(savedPosts);
+        } else {
+            // پست پیش‌فرض
+            posts = [{
+                id: 1,
+                title: "به وبلاگ من خوش آمدید!",
+                category: "عمومی",
+                body: "این یک وبلاگ کامل با قابلیت حذف و ذخیره سازی پایدار است. رمز پنل مدیریت: 7646944949",
+                date: new Date().toLocaleString('fa-IR')
+            }];
+            saveData();
+        }
+        
+        if(savedComments) {
+            comments = JSON.parse(savedComments);
+        } else {
+            comments = [];
+        }
+        
+        renderAll();
+    }
+    
+    // ذخیره داده در localStorage
+    function saveData() {
+        localStorage.setItem('blog_posts_fixed', JSON.stringify(posts));
+        localStorage.setItem('blog_comments_fixed', JSON.stringify(comments));
+        console.log('دیتا ذخیره شد:', posts.length, 'پست');
+    }
+    
+    // حذف پست (نسخه اصلاح شده)
+    function deletePost(postId) {
+        if(confirm('آیا از حذف این پست مطمئن هستید؟')) {
+            // حذف از آرایه
+            posts = posts.filter(post => post.id !== postId);
+            // حذف کامنت‌های مربوط به این پست
+            comments = comments.filter(comment => comment.postId !== postId);
+            // ذخیره در localStorage
+            saveData();
+            // رفرش کامل صفحه
+            renderAll();
+            // اگر پنل ادمین باز است، لیست رو به روز کن
+            if(document.getElementById('adminSection').style.display === 'block') {
+                renderAdminList();
+            }
+            alert('✅ پست با موفقیت حذف شد');
+        }
+    }
+    
+    // افزودن پست جدید
+    function addPost() {
+        const title = document.getElementById('postTitle').value.trim();
+        const category = document.getElementById('postCategory').value;
+        const body = document.getElementById('postBody').value.trim();
+        
+        if(!title || !body) {
+            alert('لطفاً عنوان و متن پست را وارد کنید');
+            return;
+        }
+        
+        const newPost = {
+            id: Date.now(),
+            title: title,
+            category: category,
+            body: body,
+            date: new Date().toLocaleString('fa-IR')
+        };
+        
+        posts.unshift(newPost);
+        saveData();
+        
+        // پاک کردن فرم
+        document.getElementById('postTitle').value = '';
+        document.getElementById('postBody').value = '';
+        
+        // رفرش نمایش
+        renderAll();
+        renderAdminList();
+        alert('✅ پست با موفقیت منتشر شد');
+    }
+    
+    // نمایش پست‌ها در صفحه اصلی
+    function renderPosts() {
+        const container = document.getElementById('postsContainer');
+        if(posts.length === 0) {
+            container.innerHTML = '<div style="background:white; border-radius:20px; padding:50px; text-align:center">📭 هیچ پستی وجود ندارد</div>';
+            return;
+        }
+        
+        container.innerHTML = posts.map(post => `
+            <div class="post-card">
+                <div class="post-image">📝</div>
+                <div class="post-content">
+                    <span class="post-category">${post.category}</span>
+                    <h2 class="post-title">${escapeHtml(post.title)}</h2>
+                    <div class="post-meta">
+                        <span>📅 ${post.date}</span>
+                        <span>💬 ${comments.filter(c => c.postId === post.id).length} نظر</span>
+                    </div>
+                    <p>${escapeHtml(post.body.substring(0, 100))}${post.body.length > 100 ? '...' : ''}</p>
+                    <a class="read-more" onclick="viewPost(${post.id})">ادامه مطلب →</a>
+                </div>
+            </div>
+        `).join('');
+    }
+    
+    // نمایش کامل پست
+    function viewPost(postId) {
+        const post = posts.find(p => p.id === postId);
+        if(!post) return;
+        
+        const postComments = comments.filter(c => c.postId === postId);
+        
+        const modalContent = document.getElementById('postModalContent');
+        modalContent.innerHTML = `
+            <h2 style="color:#667eea">${escapeHtml(post.title)}</h2>
+            <span class="post-category" style="margin:10px 0;display:inline-block">${post.category}</span>
+            <div class="post-meta" style="margin:10px 0">📅 ${post.date} | 💬 ${postComments.length} نظر</div>
+            <div style="line-height:1.8; margin:20px 0">${escapeHtml(post.body).replace(/\n/g, '<br>')}</div>
+            
+            <div style="margin-top:30px; padding-top:20px; border-top:2px solid #eee">
+                <h3>💬 نظرات (${postComments.length})</h3>
+                <div id="commentsList">
+                    ${postComments.map(c => `
+                        <div style="background:#f9f9f9; padding:12px; border-radius:12px; margin-bottom:12px">
+                            <strong>${escapeHtml(c.author)}</strong>
+                            <small style="color:#999"> - ${c.date}</small>
+                            <p style="margin-top:8px">${escapeHtml(c.text)}</p>
+                        </div>
+                    `).join('')}
+                </div>
+                
+                <div style="margin-top:20px">
+                    <h4>✍️ نظر خود را بنویسید</h4>
+                    <input type="text" id="commentName" placeholder="نام شما" style="width:100%; padding:10px; margin:10px 0; border:2px solid #ddd; border-radius:12px">
+                    <textarea id="commentText" rows="3" placeholder="نظر شما..." style="width:100%; padding:10px; border:2px solid #ddd; border-radius:12px"></textarea>
+                    <button class="btn-primary" onclick="addComment(${postId})" style="margin-top:10px">ارسال نظر</button>
+                </div>
+            </div>
+            <button class="btn-secondary" onclick="closeModal('postModal')" style="margin-top:20px">بستن</button>
+        `;
+        
+        document.getElementById('postModal').style.display = 'flex';
+    }
+    
+    // افزودن کامنت
+    function addComment(postId) {
+        const author = document.getElementById('commentName').value.trim();
+        const text = document.getElementById('commentText').value.trim();
+        
+        if(!author || !text) {
+            alert('لطفاً نام و متن نظر را وارد کنید');
+            return;
+        }
+        
+        comments.push({
+            id: Date.now(),
+            postId: postId,
+            author: author,
+            text: text,
+            date: new Date().toLocaleString('fa-IR')
+        });
+        
+        saveData();
+        viewPost(postId); // رفرش مودال
+    }
+    
+    // نمایش لیست در ادمین
+    function renderAdminList() {
+        const container = document.getElementById('adminPostsList');
+        if(posts.length === 0) {
+            container.innerHTML = '<p style="color:gray">هیچ پستی وجود ندارد</p>';
+            return;
+        }
+        
+        container.innerHTML = posts.map(post => `
+            <div style="background:#f9f9f9; padding:15px; border-radius:15px; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center">
+                <div>
+                    <strong>${escapeHtml(post.title)}</strong>
+                    <br>
+                    <small style="color:#888">${post.category} | ${post.date}</small>
+                </div>
+                <button class="btn-danger" onclick="deletePost(${post.id})">🗑️ حذف</button>
+            </div>
+        `).join('');
+    }
+    
+    // نمایش دسته‌بندی‌ها
+    function renderCategories() {
+        const categories = ['همه', 'عمومی', 'برنامه‌نویسی', 'زندگی', 'تکنولوژی'];
+        const container = document.getElementById('categoriesFilter');
+        let currentCat = 'همه';
+        
+        container.innerHTML = categories.map(cat => 
+            `<button class="cat-btn ${currentCat === cat ? 'active' : ''}" onclick="filterByCategory('${cat}')">${cat}</button>`
+        ).join('');
+    }
+    
+    function filterByCategory(cat) {
+        if(cat === 'همه') {
+            renderPosts();
+        } else {
+            const filtered = posts.filter(p => p.category === cat);
+            const container = document.getElementById('postsContainer');
+            if(filtered.length === 0) {
+                container.innerHTML = '<div style="background:white; border-radius:20px; padding:50px; text-align:center">😔 پستی یافت نشد</div>';
+                return;
+            }
+            container.innerHTML = filtered.map(post => `
+                <div class="post-card">
+                    <div class="post-image">📝</div>
+                    <div class="post-content">
+                        <span class="post-category">${post.category}</span>
+                        <h2 class="post-title">${escapeHtml(post.title)}</h2>
+                        <div class="post-meta">📅 ${post.date}</div>
+                        <p>${escapeHtml(post.body.substring(0, 100))}...</p>
+                        <a class="read-more" onclick="viewPost(${post.id})">ادامه مطلب →</a>
+                    </div>
+                </div>
+            `).join('');
+        }
+    }
+    
+    // آمار
+    function updateStats() {
+        document.getElementById('totalPosts').innerText = posts.length;
+        document.getElementById('totalComments').innerText = comments.length;
+    }
+    
+    // رفرش کامل
+    function renderAll() {
+        renderPosts();
+        renderCategories();
+        updateStats();
+    }
+    
+    // پنل ادمین
+    function openAdminPanel() {
+        document.getElementById('adminModal').style.display = 'flex';
+        document.getElementById('loginSection').style.display = 'block';
+        document.getElementById('adminSection').style.display = 'none';
+        document.getElementById('adminPassword').value = '';
+    }
+    
+    function checkAdminLogin() {
+        const pass = document.getElementById('adminPassword').value;
+        if(pass === '7646944949') {
+            document.getElementById('loginSection').style.display = 'none';
+            document.getElementById('adminSection').style.display = 'block';
+            renderAdminList();
+        } else {
+            document.getElementById('loginError').innerHTML = '❌ رمز اشتباه است';
+        }
+    }
+    
+    function logoutAdmin() {
+        document.getElementById('loginSection').style.display = 'block';
+        document.getElementById('adminSection').style.display = 'none';
+    }
+    
+    function closeModal(modalId) {
+        document.getElementById(modalId).style.display = 'none';
+    }
+    
+    function escapeHtml(str) {
+        if(!str) return '';
+        return str.replace(/[&<>]/g, function(m) {
+            return {'&':'&amp;', '<':'&lt;', '>':'&gt;'}[m];
+        });
+    }
+    
+    // بستن مودال با کلیک بیرون
+    window.onclick = function(e) {
+        if(e.target.classList && e.target.classList.contains('modal')) {
+            e.target.style.display = 'none';
+        }
+    }
+    
+    // اجرای اولیه
+    loadData();
+</script>
+</body>
+</html>
