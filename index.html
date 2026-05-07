@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="fa">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>وبلاگ ساده</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: system-ui; }
+        body { background: #f0f2f5; padding: 20px; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .header { background: #1e4663; color: white; padding: 15px 20px; border-radius: 20px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .admin-btn { background: #ffb74d; border: none; padding: 8px 18px; border-radius: 30px; cursor: pointer; font-weight: bold; color: #333; }
+        .post-card { background: white; padding: 15px 20px; border-radius: 20px; margin-bottom: 15px; box-shadow: 0 2px 6px rgba(0,0,0,0.05); }
+        .post-title { font-size: 1.4rem; color: #0c4e6e; margin-bottom: 5px; }
+        .post-date { font-size: 0.7rem; color: gray; margin-bottom: 10px; }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); justify-content: center; align-items: center; z-index: 1000; }
+        .modal-box { background: white; width: 90%; max-width: 500px; padding: 25px; border-radius: 28px; }
+        input, textarea { width: 100%; padding: 10px; margin: 8px 0; border: 1px solid #ccc; border-radius: 18px; font-family: inherit; }
+        button { background: #1e4663; color: white; border: none; padding: 10px 15px; border-radius: 30px; cursor: pointer; margin-top: 5px; }
+        .del-btn { background: #c0392b; padding: 4px 12px; font-size: 12px; margin-right: 10px; }
+        hr { margin: 15px 0; }
+        .close-modal-btn { background: #aaa; margin-top: 12px; width: 100%; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h2>📝 وبلاگ من</h2>
+        <button class="admin-btn" id="adminBtn">مدیریت</button>
+    </div>
+    <div id="postsArea"></div>
+</div>
+
+<div id="modal" class="modal">
+    <div class="modal-box">
+        <div id="loginView">
+            <h3>🔐 ورود به پنل</h3>
+            <input type="password" id="passInput" placeholder="رمز مدیریت">
+            <button id="loginBtn">ورود</button>
+            <p id="errMsg" style="color:red; font-size:12px; margin-top:8px"></p>
+        </div>
+        <div id="adminView" style="display:none">
+            <h3>✏️ نوشتن پست جدید</h3>
+            <input type="text" id="newTitle" placeholder="عنوان">
+            <textarea id="newBody" rows="3" placeholder="متن پست..."></textarea>
+            <button id="publishBtn">انتشار</button>
+            <hr>
+            <h3>📋 پست‌های موجود</h3>
+            <div id="adminList"></div>
+            <button id="logoutBtn" style="background:gray">خروج از پنل</button>
+        </div>
+        <button id="closeModalBtn" class="close-modal-btn">بستن</button>
+    </div>
+</div>
+
+<script>
+    // بارگذاری پست‌ها
+    let posts = JSON.parse(localStorage.getItem('blog') || '[]');
+    if(posts.length === 0) {
+        posts.push({ 
+            id: 1, 
+            title: "اولین پست", 
+            body: "به وبلاگ من خوش آمدید! با کلیک روی دکمه مدیریت می‌توانید پست جدید بنویسید.", 
+            date: new Date().toLocaleString('fa-IR') 
+        });
+        localStorage.setItem('blog', JSON.stringify(posts));
+    }
+    
+    // نمایش پست‌ها در صفحه اصلی
+    function showPosts() {
+        const area = document.getElementById('postsArea');
+        if(!posts.length) {
+            area.innerHTML = '<div class="post-card">📭 هیچ پستی نیست</div>';
+            return;
+        }
+        area.innerHTML = posts.map(p => `
+            <div class="post-card">
+                <div class="post-title">${escapeHtml(p.title)}</div>
+                <div class="post-date">📅 ${p.date}</div>
+                <div>${escapeHtml(p.body).replace(/\n/g, '<br>')}</div>
+            </div>
+        `).join('');
+    }
+    
+    function escapeHtml(str) {
+        return str.replace(/[&<>]/g, function(m) {
+            return {'&':'&amp;', '<':'&lt;', '>':'&gt;'}[m];
+        });
+    }
+    
+    // ذخیره و به‌روزرسانی
+    function savePosts() {
+        localStorage.setItem('blog', JSON.stringify(posts));
+        showPosts();
+    }
+    
+    // نمایش لیست در ادمین
+    function renderAdminList() {
+        const listDiv = document.getElementById('adminList');
+        if(posts.length === 0) {
+            listDiv.innerHTML = '<p style="color:gray">هیچ پستی وجود ندارد</p>';
+            return;
+        }
+        listDiv.innerHTML = posts.map(p => `
+            <div style="margin:8px 0; display:flex; justify-content:space-between; align-items:center">
+                <span>📄 ${escapeHtml(p.title)}</span>
+                <button class="del-btn" data-id="${p.id}">حذف</button>
+            </div>
+        `).join('');
+        
+        // اضافه کردن رویداد حذف به دکمه‌ها
+        document.querySelectorAll('.del-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const id = parseInt(btn.getAttribute('data-id'));
+                if(confirm('آیا از حذف این پست مطمئن هستید؟')) {
+                    posts = posts.filter(p => p.id !== id);
+                    savePosts();
+                    renderAdminList();
+                }
+            });
+        });
+    }
+    
+    // افزودن پست جدید
+    function addPost() {
+        let title = document.getElementById('newTitle').value.trim();
+        let body = document.getElementById('newBody').value.trim();
+        if(!title || !body) {
+            alert('❌ عنوان و متن را پر کنید');
+            return;
+        }
+        let newId = posts.length ? Math.max(...posts.map(p => p.id)) + 1 : 1;
+        posts.unshift({ 
+            id: newId, 
+            title: title, 
+            body: body, 
+            date: new Date().toLocaleString('fa-IR') 
+        });
+        savePosts();
+        document.getElementById('newTitle').value = '';
+        document.getElementById('newBody').value = '';
+        renderAdminList();
+        alert('✅ پست با موفقیت منتشر شد');
+    }
+    
+    // مدیریت مودال
+    const modal = document.getElementById('modal');
+    const adminBtn = document.getElementById('adminBtn');
+    const closeModalBtn = document.getElementById('closeModalBtn');
+    const loginBtn = document.getElementById('loginBtn');
+    const publishBtn = document.getElementById('publishBtn');
+    const logoutBtn = document.getElementById('logoutBtn');
+    const passInput = document.getElementById('passInput');
+    const errMsg = document.getElementById('errMsg');
+    const loginView = document.getElementById('loginView');
+    const adminView = document.getElementById('adminView');
+    
+    // باز کردن پنل
+    adminBtn.onclick = () => {
+        modal.style.display = 'flex';
+        loginView.style.display = 'block';
+        adminView.style.display = 'none';
+        passInput.value = '';
+        errMsg.innerText = '';
+    };
+    
+    // بستن مودال
+    closeModalBtn.onclick = () => {
+        modal.style.display = 'none';
+    };
+    
+    // کلیک روی بیرون مودال
+    window.onclick = (e) => {
+        if(e.target === modal) modal.style.display = 'none';
+    };
+    
+    // بررسی رمز
+    loginBtn.onclick = () => {
+        if(passInput.value === '7646944949') {
+            loginView.style.display = 'none';
+            adminView.style.display = 'block';
+            renderAdminList();
+        } else {
+            errMsg.innerText = '❌ رمز اشتباه است';
+            passInput.value = '';
+        }
+    };
+    
+    // انتشار پست
+    publishBtn.onclick = addPost;
+    
+    // خروج از پنل
+    logoutBtn.onclick = () => {
+        loginView.style.display = 'block';
+        adminView.style.display = 'none';
+        passInput.value = '';
+    };
+    
+    // اجرای اولیه
+    showPosts();
+</script>
+</body>
+</html>
