@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>وبلاگ من | صفحه اصلی و ادمین پنل</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: system-ui, 'Segoe UI', 'Tahoma', 'Peyda', 'Vazirmatn', Tahoma, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(145deg, #f9fafc 0%, #eef2f5 100%);
+            color: #1e2a3e;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        /* کانتینر اصلی */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        /* هدر وبلاگ */
+        .blog-header {
+            background: white;
+            border-radius: 2rem;
+            padding: 1.8rem 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+            border: 1px solid rgba(0,0,0,0.05);
+        }
+
+        .site-title h1 {
+            font-size: 1.8rem;
+            background: linear-gradient(135deg, #1f6e8c, #0e4d64);
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+        }
+
+        .admin-btn {
+            background: #1e4663;
+            color: white;
+            border: none;
+            padding: 10px 24px;
+            border-radius: 40px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 0.9rem;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .admin-btn:hover {
+            background: #0e3550;
+            transform: scale(1.02);
+        }
+
+        /* بخش پست‌ها (نمایش عمومی) */
+        .posts-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 1.8rem;
+        }
+
+        .post-card {
+            background: white;
+            border-radius: 1.5rem;
+            padding: 1.6rem 2rem;
+            transition: all 0.2s;
+            box-shadow: 0 5px 12px rgba(0,0,0,0.05);
+            border: 1px solid #e9edf2;
+        }
+
+        .post-title {
+            font-size: 1.7rem;
+            font-weight: 700;
+            margin-bottom: 0.6rem;
+            color: #0c4e6e;
+        }
+
+        .post-date {
+            font-size: 0.8rem;
+            color: #6c86a3;
+            margin-bottom: 1rem;
+            border-right: 3px solid #2c7da0;
+            padding-right: 12px;
+        }
+
+        .post-body {
+            font-size: 1rem;
+            line-height: 1.6;
+            color: #2c3e44;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        .empty-message {
+            background: #fff7e5;
+            border-radius: 1.5rem;
+            padding: 2.5rem;
+            text-align: center;
+            color: #b68b40;
+            font-weight: 500;
+        }
+
+        /* مودال ادمین پنل */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(6px);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background: #ffffff;
+            width: 90%;
+            max-width: 700px;
+            border-radius: 2rem;
+            box-shadow: 0 25px 45px rgba(0,0,0,0.2);
+            overflow: hidden;
+            animation: fadeSlideUp 0.25s ease-out;
+        }
+
+        @keyframes fadeSlideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .modal-header {
+            background: #1e4663;
+            color: white;
+            padding: 1.2rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h2 {
+            font-size: 1.4rem;
+        }
+
+        .close-modal {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.8rem;
+            cursor: pointer;
+            transition: 0.1s;
+        }
+
+        .modal-body {
+            padding: 2rem;
+            max-height: 65vh;
+            overflow-y: auto;
+        }
+
+        /* فرم ورود رمز */
+        .login-area {
+            text-align: center;
+        }
+
+        .password-input {
+            width: 100%;
+            padding: 14px 18px;
+            border: 1px solid #cbd5e1;
+            border-radius: 60px;
+            font-size: 1rem;
+            margin: 20px 0;
+            text-align: center;
+            letter-spacing: 2px;
+        }
+
+        .submit-login {
+            background: #2c7da0;
+            border: none;
+            padding: 12px 28px;
+            border-radius: 40px;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            width: 100%;
+            font-size: 1rem;
+        }
+
+        .error-msg {
+            color: #c0392b;
+            margin-top: 12px;
+            font-size: 0.85rem;
+        }
+
+        /* فرم ایجاد پست */
+        .admin-form input, .admin-form textarea {
+            width: 100%;
+            padding: 12px 16px;
+            margin: 12px 0;
+            border: 1px solid #ccd7e6;
+            border-radius: 24px;
+            font-size: 1rem;
+            background: #fefefe;
+        }
+
+        .admin-form textarea {
+            min-height: 140px;
+            resize: vertical;
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 16px;
+            flex-wrap: wrap;
+        }
+
+        .btn-primary {
+            background: #2c7da0;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 40px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .btn-danger {
+            background: #b23c1c;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 40px;
+            cursor: pointer;
+        }
+
+        .btn-secondary {
+            background: #6c86a3;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 40px;
+            cursor: pointer;
+        }
+
+        .post-list-admin {
+            margin-top: 30px;
+            border-top: 2px solid #e2e8f0;
+            padding-top: 20px;
+        }
+
+        .admin-post-item {
+            background: #f8fafc;
+            border-radius: 1rem;
+            padding: 12px 18px;
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .admin-post-title {
+            font-weight: 700;
+            flex: 2;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .delete-post-btn {
+            background: #e07a5f;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 30px;
+            color: white;
+            cursor: pointer;
+            font-size: 0.75rem;
+        }
+
+        .small-note {
+            font-size: 0.7rem;
+            color: #6c86a3;
+            margin-right: 12px;
+        }
+
+        footer {
+            margin-top: 3rem;
+            text-align: center;
+            color: #5d7184;
+            font-size: 0.8rem;
+        }
+
+        @media (max-width: 640px) {
+            .post-title {
+                font-size: 1.3rem;
+            }
+            .modal-body {
+                padding: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <header class="blog-header">
+        <div class="site-title">
+            <h1>📖 دنیای کلمات | وبلاگ شخصی</h1>
+            <p style="font-size: 0.8rem; color: #3a6b8c;">نوشته‌ها، اندیشه‌ها، تجربه‌ها</p>
+        </div>
+        <button class="admin-btn" id="openAdminBtn">🔐 پنل مدیریت</button>
+    </header>
+
+    <main>
+        <div id="postsContainer" class="posts-grid">
+            <!-- پست‌ها به صورت داینامیک نمایش داده می‌شوند -->
+            <div class="empty-message">در حال بارگذاری مطالب...</div>
+        </div>
+    </main>
+    <footer>
+        <span>وبلاگ نمونه | مدیریت با رمز امن</span>
+    </footer>
+</div>
+
+<!-- مودال ادمین پنل (شامل ورود رمز و بخش مدیریت) -->
+<div id="adminModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>👑 پنل مدیریت وبلاگ</h2>
+            <button class="close-modal" id="closeModalBtn">&times;</button>
+        </div>
+        <div class="modal-body" id="modalBody">
+            <!-- بخش ورود رمز به صورت پیش‌فرض -->
+            <div id="loginSection">
+                <div class="login-area">
+                    <p style="margin-bottom: 10px;">برای دسترسی به پنل مدیریت، رمز عبور را وارد کنید.</p>
+                    <input type="password" id="adminPassword" class="password-input" placeholder="رمز مدیریت" autocomplete="off">
+                    <button id="verifyPasswordBtn" class="submit-login">تأیید و ورود</button>
+                    <div id="loginError" class="error-msg"></div>
+                </div>
+            </div>
+            <div id="adminPanelSection" style="display: none;">
+                <!-- بخش مدیریت بعد از ورود موفق -->
+                <div class="admin-form">
+                    <h3>✏️ نوشتن پست جدید</h3>
+                    <input type="text" id="newPostTitle" placeholder="عنوان پست ..." maxlength="100">
+                    <textarea id="newPostBody" placeholder="متن پست را اینجا بنویسید ..."></textarea>
+                    <div class="form-actions">
+                        <button id="publishPostBtn" class="btn-primary">📌 انتشار پست</button>
+                        <button id="logoutAdminBtn" class="btn-secondary">🚪 خروج از پنل</button>
+                    </div>
+                </div>
+                <div class="post-list-admin">
+                    <h3>📋 مدیریت پست‌های موجود</h3>
+                    <div id="adminPostsList">
+                        <!-- لیست پست‌ها با دکمه حذف -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // ---- کلید ذخیره در localStorage ----
+    const STORAGE_KEY = "simple_blog_posts";
+
+    // ---- تعریف رمز ثابت (مطابق خواسته) ----
+    const ADMIN_PASSWORD = "7646944949";
+
+    // ---- وضعیت session (آیا مدیر وارد شده؟) ----
+    let isAdminLoggedIn = false;
+
+    // ---- نمونه داده اولیه (اگر ذخیره‌ای نباشد، چند پست نمونه) ----
+    const defaultPosts = [
+        { id: 1, title: "به وبلاگ من خوش آمدید 👋", body: "سلام! این اولین پست آزمایشی است. شما می‌توانید از پنل مدیریت با رمز 7646944949 وارد شوید و پست جدید بسازید یا پست‌ها را حذف کنید. این وبلاگ از localStorage استفاده می‌کند و داده‌ها در مرورگر شما ذخیره می‌شود.", date: "۱۴۰۳/۰۱/۱۵ - ۱۰:۲۳" },
+        { id: 2, title: "چرا یادگیری برنامه‌نویسی؟", body: "برنامه‌نویسی مهارتی جذاب و کاربردی است. با ساخت پروژه‌های ساده می‌توانید خلاقیت خود را به کار بگیرید. این وبلاگ یک تمرین ساده اما کامل از HTML، CSS و JS است.", date: "۱۴۰۳/۰۲/۰۵ - ۱۴:۱۰" }
+    ];
+
+    // ---- توابع کمکی برای تاریخ فارسی ----
+    function getPersianDate() {
+        const now = new Date();
+        const year = now.toLocaleDateString('fa-IR', { year: 'numeric' });
+        const month = now.toLocaleDateString('fa-IR', { month: 'numeric' });
+        const day = now.toLocaleDateString('fa-IR', { day: 'numeric' });
+        const hour = now.getHours().toString().padStart(2, '0');
+        const minute = now.getMinutes().toString().padStart(2, '0');
+        return `${year}/${month}/${day} - ${hour}:${minute}`;
+    }
+
+    // ---- بارگذاری پست‌ها از localStorage ----
+    function loadPostsFromStorage() {
+        const stored = localStorage.getItem(STORAGE_KEY);
+        if (stored) {
+            try {
+                let posts = JSON.parse(stored);
+                // اطمینان از معتبر بودن داده‌ها
+                if (Array.isArray(posts) && posts.length >= 0) {
+                    return posts;
+                } else {
+                    return [...defaultPosts];
+                }
+            } catch(e) {
+                return [...defaultPosts];
+            }
+        } else {
+            // ذخیره پست‌های پیش‌فرض در localStorage
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(defaultPosts));
+            return [...defaultPosts];
+        }
+    }
+
+    // ---- ذخیره پست‌ها ----
+    function savePostsToStorage(posts) {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(posts));
+    }
+
+    // ---- نمایش پست‌ها در صفحه اصلی (عمومی) ----
+    function renderPublicPosts() {
+        const posts = loadPostsFromStorage();
+        const container = document.getElementById('postsContainer');
+        if (!container) return;
+
+        if (posts.length === 0) {
+            container.innerHTML = `<div class="empty-message">📭 هنوز پستی منتشر نشده است. مدیر گرامی وارد پنل شوید و اولین پست را بنویسید.</div>`;
+            return;
+        }
+
+        let html = '';
+        posts.forEach(post => {
+            html += `
+                <div class="post-card" data-id="${post.id}">
+                    <div class="post-title">${escapeHtml(post.title)}</div>
+                    <div class="post-date">📅 ${escapeHtml(post.date)}</div>
+                    <div class="post-body">${escapeHtml(post.body).replace(/\n/g, '<br>')}</div>
+                </div>
+            `;
+        });
+        container.innerHTML = html;
+    }
+
+    // ---- نمایش لیست پست‌ها در بخش ادمین (برای حذف) ----
+    function renderAdminPostList() {
+        const posts = loadPostsFromStorage();
+        const adminListContainer = document.getElementById('adminPostsList');
+        if (!adminListContainer) return;
+
+        if (posts.length === 0) {
+            adminListContainer.innerHTML = `<div style="padding: 12px; background:#f1f3f4; border-radius: 1rem;">هیچ پستی وجود ندارد. اولین پست را ایجاد کنید.</div>`;
+            return;
+        }
+
+        let html = '';
+        posts.forEach(post => {
+            html += `
+                <div class="admin-post-item" data-id="${post.id}">
+                    <span class="admin-post-title">📄 ${escapeHtml(post.title)}</span>
+                    <button class="delete-post-btn" data-id="${post.id}">🗑️ حذف پست</button>
+                </div>
+            `;
+        });
+        adminListContainer.innerHTML = html;
+
+        // اتصال رویداد حذف به دکمه‌ها
+        document.querySelectorAll('.delete-post-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const postId = parseInt(btn.getAttribute('data-id'));
+                if (confirm('آیا از حذف این پست مطمئن هستید؟')) {
+                    deletePostById(postId);
+                }
+            });
+        });
+    }
+
+    // ---- حذف پست با ID ----
+    function deletePostById(id) {
+        let posts = loadPostsFromStorage();
+        const newPosts = posts.filter(post => post.id !== id);
+        if (newPosts.length === posts.length) {
+            alert("پست مورد نظر یافت نشد.");
+            return;
+        }
+        savePostsToStorage(newPosts);
+        // بروزرسانی همه بخش‌ها
+        renderPublicPosts();
+        if (isAdminLoggedIn) {
+            renderAdminPostList();
+        }
+        // اگر پس از حذف، پنل باز باشد لیست به روز می‌شود
+    }
+
+    // ---- انتشار پست جدید ----
+    function publishNewPost() {
+        const titleInput = document.getElementById('newPostTitle');
+        const bodyInput = document.getElementById('newPostBody');
+        const title = titleInput.value.trim();
+        const body = bodyInput.value.trim();
+
+        if (!title) {
+            alert("لطفاً عنوان پست را وارد کنید.");
+            return;
+        }
+        if (!body) {
+            alert("متن پست نمی‌تواند خالی باشد.");
+            return;
+        }
+
+        const posts = loadPostsFromStorage();
+        const newId = posts.length > 0 ? Math.max(...posts.map(p => p.id)) + 1 : 1;
+        const newPost = {
+            id: newId,
+            title: title,
+            body: body,
+            date: getPersianDate()
+        };
+        posts.unshift(newPost); // جدیدترین در ابتدا
+        savePostsToStorage(posts);
+
+        // پاک کردن فرم
+        titleInput.value = '';
+        bodyInput.value = '';
+
+        // بروزرسانی صفحات
+        renderPublicPosts();
+        if (isAdminLoggedIn) {
+            renderAdminPostList();
+        }
+        alert("پست با موفقیت منتشر شد ✅");
+    }
+
+    // ---- کمکی برای جلوگیری از XSS ----
+    function escapeHtml(str) {
+        if (!str) return '';
+        return str.replace(/[&<>]/g, function(m) {
+            if (m === '&') return '&amp;';
+            if (m === '<') return '&lt;';
+            if (m === '>') return '&gt;';
+            return m;
+        }).replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g, function(c) {
+            return c;
+        });
+    }
+
+    // ---- مدیریت لاگین در پنل ----
+    function showLoginSection() {
+        document.getElementById('loginSection').style.display = 'block';
+        document.getElementById('adminPanelSection').style.display = 'none';
+        // پاک کردن خطا و رمز
+        const passInput = document.getElementById('adminPassword');
+        if (passInput) passInput.value = '';
+        const errorDiv = document.getElementById('loginError');
+        if (errorDiv) errorDiv.innerText = '';
+    }
+
+    function showAdminPanel() {
+        document.getElementById('loginSection').style.display = 'none';
+        document.getElementById('adminPanelSection').style.display = 'block';
+        // رندر لیست پست‌ها برای مدیریت
+        renderAdminPostList();
+        // پاک کردن فرم نوشتن پست
+        const titleInput = document.getElementById('newPostTitle');
+        const bodyInput = document.getElementById('newPostBody');
+        if(titleInput) titleInput.value = '';
+        if(bodyInput) bodyInput.value = '';
+    }
+
+    // بررسی رمز و ورود
+    function attemptLogin() {
+        const passwordField = document.getElementById('adminPassword');
+        const enteredPass = passwordField ? passwordField.value : '';
+        const errorSpan = document.getElementById('loginError');
+        if (enteredPass === ADMIN_PASSWORD) {
+            isAdminLoggedIn = true;
+            errorSpan.innerText = '';
+            showAdminPanel();
+        } else {
+            errorSpan.innerText = '❌ رمز عبور اشتباه است. دسترسی محدود.';
+            passwordField.value = '';
+        }
+    }
+
+    // خروج از ادمین
+    function logoutAdmin() {
+        isAdminLoggedIn = false;
+        showLoginSection();
+        // همچنین اگر مودال باز است، لاگ اوت شود ولی مودال بسته نمی‌شود -> بهتر نمایش لاگین مجدد
+        // پاک کردن وضعیت پنل
+        const modalBodyDiv = document.getElementById('modalBody');
+        if(modalBodyDiv) {
+            // نمایش لاگین
+            showLoginSection();
+        }
+    }
+
+    // باز کردن مودال و ریست کردن وضعیت بر اساس isAdminLoggedIn
+    function openModalAndReset() {
+        const modal = document.getElementById('adminModal');
+        if (modal) {
+            modal.style.display = 'flex';
+            if (isAdminLoggedIn) {
+                // اگر قبلاً لاگین کرده، پنل مدیریت را مستقیم نشان بده
+                showAdminPanel();
+            } else {
+                showLoginSection();
+            }
+        }
+    }
+
+    // بستن مودال
+    function closeModal() {
+        const modal = document.getElementById('adminModal');
+        if (modal) modal.style.display = 'none';
+        // پاک کردن خطاها و ریست رمز داخل لاگین (برای دفعه بعد)
+        const errorSpan = document.getElementB
