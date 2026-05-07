@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="fa">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>پلتفرم وبلاگ دهی | با عکس پروفایل</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: system-ui, Tahoma, sans-serif; }
+        
+        body { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; padding: 20px; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        
+        .main-header { background: rgba(255,255,255,0.95); border-radius: 25px; padding: 15px 25px; margin-bottom: 25px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; }
+        .logo h1 { color: #667eea; font-size: 1.5rem; }
+        .user-info { display: flex; align-items: center; gap: 15px; flex-wrap: wrap; }
+        .avatar-small { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid #667eea; background: #f0f0f0; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; }
+        .login-btn, .register-btn, .admin-panel-btn { background: #667eea; color: white; border: none; padding: 8px 20px; border-radius: 25px; cursor: pointer; }
+        .logout-btn { background: #e74c3c; color: white; border: none; padding: 8px 20px; border-radius: 25px; cursor: pointer; }
+        
+        .user-profile-card { background: white; border-radius: 20px; padding: 20px; margin-bottom: 25px; display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
+        .profile-avatar { width: 70px; height: 70px; border-radius: 50%; object-fit: cover; border: 3px solid #667eea; background: #f0f0f0; display: flex; align-items: center; justify-content: center; font-size: 2rem; }
+        
+        .blogs-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; }
+        .blog-card { background: white; border-radius: 20px; overflow: hidden; box-shadow: 0 5px 20px rgba(0,0,0,0.1); cursor: pointer; transition: transform 0.3s; }
+        .blog-card:hover { transform: translateY(-5px); }
+        .blog-cover { height: 120px; background: linear-gradient(135deg, #667eea, #764ba2); display: flex; align-items: center; justify-content: center; color: white; font-size: 2.5rem; }
+        .blog-content { padding: 15px; }
+        .blog-title { font-size: 1.2rem; color: #333; margin-bottom: 5px; }
+        .blog-desc { color: #666; font-size: 0.8rem; }
+        
+        .posts-list { display: flex; flex-direction: column; gap: 15px; }
+        .post-item { background: #f9f9f9; padding: 15px; border-radius: 15px; }
+        .post-title { font-size: 1.1rem; color: #667eea; margin-bottom: 8px; font-weight: bold; }
+        
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); justify-content: center; align-items: center; z-index: 1000; }
+        .modal-content { background: white; width: 90%; max-width: 450px; border-radius: 25px; padding: 25px; max-height: 90vh; overflow-y: auto; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: bold; }
+        .form-group input, .form-group textarea { width: 100%; padding: 10px; border: 2px solid #e0e0e0; border-radius: 12px; }
+        .btn-primary { background: linear-gradient(135deg, #667eea, #764ba2); color: white; border: none; padding: 10px 20px; border-radius: 25px; cursor: pointer; margin-left: 8px; }
+        .btn-danger { background: #e74c3c; color: white; border: none; padding: 5px 12px; border-radius: 20px; cursor: pointer; }
+        .btn-secondary { background: #95a5a6; color: white; border: none; padding: 8px 18px; border-radius: 25px; cursor: pointer; }
+        
+        .back-btn { background: #95a5a6; color: white; border: none; padding: 8px 20px; border-radius: 25px; cursor: pointer; margin-bottom: 20px; display: inline-block; }
+        .user-clickable { cursor: pointer; }
+        .user-clickable:hover { text-decoration: underline; }
+        
+        .avatar-preview { width: 80px; height: 80px; border-radius: 50%; object-fit: cover; margin-top: 10px; border: 2px solid #667eea; }
+        .file-input-label { background: #667eea; color: white; padding: 8px 15px; border-radius: 20px; cursor: pointer; display: inline-block; font-size: 0.8rem; }
+        .file-input-label:hover { background: #764ba2; }
+        
+        @media (max-width: 768px) {
+            .blogs-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="main-header">
+        <div class="logo">
+            <h1>📝 پلتفرم وبلاگ دهی</h1>
+        </div>
+        <div id="headerUserInfo"></div>
+    </div>
+
+    <div id="mainContent">
+        <div id="usersListContainer" class="blogs-grid"></div>
+        <div id="userBlogsContainer" style="display:none"></div>
+        <div id="singleBlogContainer" style="display:none"></div>
+    </div>
+</div>
+
+<!-- مودال ادمین -->
+<div id="adminModal" class="modal">
+    <div class="modal-content">
+        <div id="adminLoginSection">
+            <h2>🔐 پنل مدیریت</h2>
+            <input type="password" id="adminPassword" placeholder="رمز مدیریت" style="width:100%; padding:10px; margin:15px 0; border-radius:12px; border:2px solid #ddd">
+            <button class="btn-primary" onclick="checkAdminLogin()">ورود</button>
+            <button class="btn-secondary" onclick="closeModal('adminModal')">بستن</button>
+            <p id="adminLoginError" style="color:red; margin-top:10px"></p>
+        </div>
+        
+        <div id="adminPanelSection" style="display:none">
+            <h2>👑 مدیریت کاربران</h2>
+            <div class="form-group">
+                <label>نام کاربری جدید</label>
+                <input type="text" id="newUsername" placeholder="نام کاربری">
+            </div>
+            <div class="form-group">
+                <label>رمز عبور</label>
+                <input type="password" id="newPassword" placeholder="رمز عبور">
+            </div>
+            <div class="form-group">
+                <label>عکس پروفایل</label>
+                <input type="file" id="adminAvatarInput" accept="image/*" style="display:none">
+                <button class="file-input-label" onclick="document.getElementById('adminAvatarInput').click()">📷 انتخاب عکس</button>
+                <div id="adminAvatarPreview"></div>
+            </div>
+            <button class="btn-primary" onclick="createUserByAdmin()">➕ ساخت کاربر</button>
+            <hr style="margin: 15px 0">
+            <h3>📋 لیست کاربران</h3>
+            <div id="adminUsersList" style="max-height: 250px; overflow-y: auto;"></div>
+            <button class="btn-secondary" onclick="logoutAdmin()" style="margin-top:15px">خروج</button>
+        </div>
+    </div>
+</div>
+
+<!-- مودال ثبت نام/ورود -->
+<div id="authModal" class="modal">
+    <div class="modal-content">
+        <h2 id="authTitle">📝 ثبت نام</h2>
+        <div class="form-group">
+            <label>نام کاربری</label>
+            <input type="text" id="username" placeholder="نام کاربری">
+        </div>
+        <div class="form-group">
+            <label>رمز عبور</label>
+            <input type="password" id="password" placeholder="رمز عبور">
+        </div>
+        <div class="form-group" id="avatarGroup">
+            <label>عکس پروفایل (دلخواه)</label>
+            <input type="file" id="avatarInput" accept="image/*" style="display:none">
+            <button class="file-input-label" onclick="document.getElementById('avatarInput').click()">📷 انتخاب عکس از گالری</button>
+            <div id="avatarPreview"></div>
+        </div>
+        <button class="btn-primary" id="authSubmitBtn">ثبت نام</button>
+        <button class="btn-secondary" onclick="closeModal('authModal')">بستن</button>
+        <p id="switchAuthText" style="margin-top:15px; text-align:center; cursor:pointer; color:#667eea">قبلاً ثبت نام کرده‌اید؟ ورود</p>
+    </div>
+</div>
+
+<!-- مودال ساخت بلاگ -->
+<div id="createBlogModal" class="modal">
+    <div class="modal-content">
+        <h2>➕ بلاگ جدید</h2>
+        <div class="form-group">
+            <label>عنوان بلاگ</label>
+            <input type="text" id="blogTitle" placeholder="عنوان">
+        </div>
+        <div class="form-group">
+            <label>توضیحات</label>
+            <textarea id="blogDesc" rows="3" placeholder="توضیحات..."></textarea>
+        </div>
+        <button class="btn-primary" onclick="createBlog()">ایجاد</button>
+        <button class="btn-secondary" onclick="closeModal('createBlogModal')">بستن</button>
+    </div>
+</div>
+
+<!-- مودال ساخت پست -->
+<div id="createPostModal" class="modal">
+    <div class="modal-content">
+        <h2>✏️ پست جدید</h2>
+        <div class="form-group">
+            <label>عنوان</label>
+            <input type="text" id="postTitle" placeholder="عنوان">
+        </div>
+        <div class="form-group">
+            <label>متن</label>
+            <textarea id="postBody" rows="5" placeholder="متن پست..."></textarea>
+        </div>
+        <button class="btn-primary" onclick="createPost()">انتشار</button>
+        <button class="btn-secondary" onclick="closeModal('createPostModal')">بستن</button>
+    </div>
+</div>
+
+<script>
+    // دیتابیس
+    let users = [];
+    let blogs = [];
+    let posts = [];
+    let currentUser = null;
+    let currentViewUser = null;
+    let currentBlog = null;
+    
+    // بارگذاری اولیه
+    function loadData() {
+        const savedUsers = localStorage.getItem('blog_users_with_avatar');
+        const savedBlogs = localStorage.getItem('blog_blogs_with_avatar');
+        const savedPosts = localStorage.getItem('blog_posts_with_avatar');
+        const savedSession = localStorage.getItem('blog_session_with_avatar');
+        
+        if(savedUsers) {
+            users = JSON.parse(savedUsers);
+        } else {
+            users = [{ id: 1, username: "مدیر سایت", password: "123456", avatar: null }];
+            saveUsers();
+        }
+        
+        if(savedBlogs) {
+            blogs = JSON.parse(savedBlogs);
+        } else {
+            blogs = [];
+        }
+        
+        if(savedPosts) {
+            posts = JSON.parse(savedPosts);
+        } else {
+            posts = [];
+        }
+        
+        if(savedSession) {
+            const session = JSON.parse(savedSession);
+            if(session && session.id) {
+                const user = users.find(u => u.id === session.id);
+                if(user) currentUser = user;
+            }
+        }
+        
+        renderAll();
+    }
+    
+    function saveUsers() { localStorage.setItem('blog_users_with_avatar', JSON.stringify(users)); }
+    function saveBlogs() { localStorage.setItem('blog_blogs_with_avatar', JSON.stringify(blogs)); }
+    function savePosts() { localStorage.setItem('blog_posts_with_avatar', JSON.stringify(posts)); }
+    function saveSession() { localStorage.setItem('blog_session_with_avatar', JSON.stringify(currentUser ? {id: currentUser.id} : null)); }
+    
+    // نمایش آواتار
+    function getAvatarHtml(user) {
+        if(user && user.avatar) {
+            return `<img src="${user.avatar}" style="width:100%;height:100%;border-radius:50%;object-fit:cover">`;
+        }
+        return '👤';
+    }
+    
+    // نمایش لیست کاربران
+    function renderUsersList() {
+        const container = document.getElementById('usersListContainer');
+        if(users.length === 0) {
+            container.innerHTML = '<div style="background:white; border-radius:20px; padding:50px; text-align:center">📭 کاربری وجود ندارد</div>';
+            return;
+        }
+        
+        container.innerHTML = users.map(user => `
+            <div class="blog-card user-clickable" onclick="viewUserBlogs(${user.id})">
+                <div class="blog-cover">${user.avatar ? '<img src="'+user.avatar+'" style="width:100%;height:100%;object-fit:cover">' : '👤'}</div>
+                <div class="blog-content">
+                    <h3 class="blog-title">${escapeHtml(user.username)}</h3>
+                    <p class="blog-desc">${getUserBlogsCount(user.id)} بلاگ | ${getUserPostsCount(user.id)} پست</p>
+                </div>
+            </div>
+        `).join('');
+    }
+    
+    // نمایش بلاگ‌های یک کاربر
+    function viewUserBlogs(userId) {
+        currentViewUser = users.find(u => u.id === userId);
+        if(!currentViewUser) return;
+        
+        const userBlogs = blogs.filter(b => b.userId === userId);
+        
+        const container = document.getElementById('userBlogsContainer');
+        container.innerHTML = `
+            <div class="user-profile-card">
+                <div class="profile-avatar">${getAvatarHtml(currentViewUser)}</div>
+                <div>
+                    <h2>${escapeHtml(currentViewUser.username)}</h2>
+                    <p>${userBlogs.length} بلاگ | ${getUserPostsCount(userId)} پست</p>
+                </div>
+            </div>
+            <div style="margin-bottom:20px">
+                ${currentUser && currentUser.id === userId ? '<button class="btn-primary" onclick="openCreateBlogModal()">➕ بلاگ جدید</button>' : ''}
+                <button class="back-btn" onclick="backToUsers()">← بازگشت</button>
+            </div>
+            <div class="blogs-grid" id="userBlogsGrid"></div>
+        `;
+        
+        const blogsGrid = document.getElementById('userBlogsGrid');
+        if(userBlogs.length === 0) {
+            blogsGrid.innerHTML = '<div style="background:white; border-radius:20px; padding:50px; text-align:center">📭 بلاگی ساخته نشده</div>';
+        } else {
+            blogsGrid.innerHTML = userBlogs.map(blog => `
+                <div class="blog-card" onclick="viewBlog(${blog.id})">
+                    <div class="blog-cover">📖</div>
+                    <div class="blog-content">
+                        <h3 class="blog-title">${escapeHtml(blog.title)}</h3>
+                        <p class="blog-desc">${escapeHtml(blog.description.substring(0, 80))}${blog.description.length > 80 ? '...' : ''}</p>
+                        <small>${getBlogPostsCount(blog.id)} پست</small>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        document.getElementById('usersListContainer').style.display = 'none';
+        document.getElementById('userBlogsContainer').style.display = 'block';
+        document.getElementById('singleBlogContainer').style.display = 'none';
+    }
+    
+    // نمایش یک بلاگ
+    function viewBlog(blogId) {
+        currentBlog = blogs.find(b => b.id === blogId);
+        if(!currentBlog) return;
+        
+        const blogPosts = posts.filter(p => p.blogId === blogId);
+        const blogOwner = users.find(u => u.id === currentBlog.userId);
+        
+        const container = document.getElementById('singleBlogContainer');
+        container.innerHTML = `
+            <div class="user-profile-card">
+                <div class="profile-avatar">${getAvatarHtml(blogOwner)}</div>
+                <div>
+                    <h2>${escapeHtml(currentBlog.title)}</h2>
+                    <p>نویسنده: <strong class="user-clickable" onclick="viewUserBlogs(${blogOwner.id})">${escapeHtml(blogOwner.username)}</strong></p>
+                    <p>${escapeHtml(currentBlog.description)}</p>
+                </div>
+            </div>
+            <div style="margin-bottom:20px">
+                ${currentUser && currentUser.id === blogOwner.id ? '<button class="btn-primary" onclick="openCreatePostModal()">✏️ پست جدید</button>' : ''}
+                <button class="back-btn" onclick="viewUserBlogs(${blogOwner.id})">← بازگشت</button>
+            </div>
+            <div class="posts-list" id="blogPostsList"></div>
+        `;
+        
+        const postsList = document.getElementById('blogPostsList');
+        if(blogPosts.length === 0) {
+            postsList.innerHTML = '<div style="background:white; border-radius:20px; padding:50px; text-align:center">📭 پستی منتشر نشده</div>';
+        } else {
+            postsList.innerHTML = blogPosts.map(post => `
+                <div class="post-item">
+                    <h3 class="post-title">${escapeHtml(post.title)}</h3>
+                    <p>${escapeHtml(post.body).replace(/\n/g, '<br>')}</p>
+                    <small style="color:#999">📅 ${post.date}</small>
+                    ${currentUser && currentUser.id === blogOwner.id ? `<button class="btn-danger" style="margin-top:10px" onclick="deletePost(${post.id})">🗑️ حذف</button>` : ''}
+                </div>
+            `).join('');
+        }
+        
+        document.getElementById('usersListContainer').style.display = 'none';
+        document.getElementById('userBlogsContainer').style.display = 'none';
+        document.getElementById('singleBlogContainer').style.display = 'block';
+    }
+    
+    // ساخت بلاگ
+    function createBlog() {
+        const title = document.getElementById('blogTitle').value.trim();
+        const description = document.getElementById('blogDesc').value.trim();
+        
+        if(!title) {
+            alert('عنوان بلاگ را وارد کنید');
+            return;
+        }
+        
+        const newBlog = {
+            id: Date.now(),
+            userId: currentUser.id,
+            title: title,
+            description: description || 'بدون توضیحات',
+            date: new Date().toLocaleString('fa-IR')
+        };
+        
+        blogs.push(newBlog);
+        saveBlogs();
+        closeModal('createBlogModal');
+        document.getElementById('blogTitle').value = '';
+        document.getElementById('blogDesc').value = '';
+        viewUserBlogs(currentUser.id);
+    }
+    
+    // ساخت پست
+    function createPost() {
+        const title = document.getElementById('postTitle').value.trim();
+        const body = document.getElementById('postBody').value.trim();
+        
+        if(!title || !body) {
+            alert('عنوان و متن را پر کنید');
+            return;
+        }
+        
+        const newPost = {
+            id: Date.now(),
+            blogId: currentBlog.id,
+            userId: currentUser.id,
+            title: title,
+            body: body,
+            date: new Date().toLocaleString('fa-IR')
+        };
+        
+        posts.push(newPost);
+        savePosts();
+        closeModal('createPostModal');
+        document.getElementById('postTitle').value = '';
+        document.getElementById('postBody').value = '';
+        viewBlog(currentBlog.id);
+    }
+    
+    // حذف پست
+    function deletePost(postId) {
+        if(confirm('حذف شود؟')) {
+            posts = posts.filter(p => p.id !== postId);
+            savePosts();
+            viewBlog(currentBlog.id);
+        }
+    }
+    
+    // آمار
+    function getUserBlogsCount(userId) { return blogs.filter(b => b.userId === userId).length; }
+    function getUserPostsCount(userId) { return posts.filter(p => p.userId === userId).length; }
+    function getBlogPostsCount(blogId) { return posts.filter(p => p.blogId === blogId).length; }
+    
+    function backToUsers() {
+        currentViewUser = null;
+        currentBlog = null;
+        document.getElementById('usersListContainer').style.display = 'grid';
+        document.getElementById('userBlogsContainer').style.display = 'none';
+        document.getElementById('singleBlogContainer').style.display = 'none';
+        renderUsersList();
+    }
+    
+    // احراز هویت با عکس
+    function register() {
+        const username = document.getElementById('username').value.trim();
+        const password = document.getElementById('password').value;
+        const avatarFile = document.getElementById('avatarInput').files[0];
+        
+        if(!username || !password) {
+            alert('نام کاربری و رمز را وارد کنید');
+            return;
+        }
+        
+        if(users.find(u => u.username === username)) {
+            alert('نام کاربری تکراری');
+            return;
+        }
+        
+        if(avatarFile) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const newUser = { id: Date.now(), username, password, av
